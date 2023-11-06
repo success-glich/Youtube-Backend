@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { DB_NAME } from "../constants.js";
 
-//db is in another cont..
+// db is in another continent 
 const connectToDB = async () => {
 
     try {
