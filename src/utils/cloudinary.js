@@ -1,13 +1,15 @@
 import { v2 as cloudinary } from 'cloudinary';
 import fs from "node:fs";
-
+import vars from '../config/vars.js';
 cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
+    cloud_name: vars.CLOUDINARY_CLOUD_NAME,
+    api_key: vars.CLOUDINARY_API_KEY,
+    api_secret: vars.CLOUDINARY_API_SECRET
 });
 
 const uploadOnCloudinary = async (localFilePath) => {
+
+    console.log('local Path', localFilePath);
     try {
         if (!localFilePath) {
             return null
@@ -25,7 +27,7 @@ const uploadOnCloudinary = async (localFilePath) => {
 
         // * remove the locally saved temporary file as the upload operation got fail
         fs.unlinkSync(localFilePath);
-        console.log(error);
+        console.log("error in cloudinary", error);
         return null;
     }
 }

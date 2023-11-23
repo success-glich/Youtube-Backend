@@ -20,7 +20,7 @@ const userSchema = new Schema(
             trim: true,
         },
         fullName: {
-            type: string,
+            type: String,
             required: true,
             trim: true,
             index: true
@@ -94,4 +94,4 @@ userSchema.methods.generateRefreshToken = function () {
 }
 
 
-export const user = mongoose.model("User", userSchema);
+export const User = mongoose.model("User", userSchema);
