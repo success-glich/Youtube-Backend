@@ -3,6 +3,8 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { User } from "../models/user.model.js"
 import { ApiResponse } from "../utils/ApiResponse.js";
+import jwt from "jsonwebtoken";
+import vars from "../config/vars.js";
 
 const generateAccessAndRefreshToken = async (userId) => {
     try {
@@ -39,14 +41,15 @@ const registerUser = asyncHandler(async (req, res, next) => {
     }
     // * TODO: observe req.files for studying purpose
     const avatarLocalPath = req.files?.avatar[0]?.path;
+    if (!avatarLocalPath) {
+        throw new ApiError(400, "Avatar file is required");
+    }
     let coverImageLocalPath;
 
     if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0) {
         coverImageLocalPath = req.files.coverImage[0].path;;
     }
-    if (!avatarLocalPath) {
-        throw new ApiError(400, "Avatar file is required");
-    }
+
     const avatar = await uploadOnCloudinary(avatarLocalPath);
     console.log(avatar);
     const coverImage = await uploadOnCloudinary(coverImageLocalPath);
@@ -85,21 +88,26 @@ const loginUser = asyncHandler(async (req, res, next) => {
     */
 
     const { username, email, password } = req.body;
+    console.log(username, email, password);
 
     if (!username && !email) {
         throw new ApiError(400, "username or email is required")
     }
     // if (!username || !email) {
     //     throw new ApiError(400, "Username or email is required!!");
-
     // }
     const user = await User.findOne({ $or: [{ username }, { email }] });
+
     if (!user) {
         throw new ApiError(404, 'User does not exist!!');
     }
+    console.log(user);
     const isPasswordValid = await user.isPasswordCorrect(password);
+    console.log("isValid Password", isPasswordValid);
+
 
     if (!isPasswordValid) {
+
         throw new ApiError(401, "Invalid User Credentials");
     }
 
@@ -116,8 +124,8 @@ const loginUser = asyncHandler(async (req, res, next) => {
 
     return res
         .status(200)
-        .cookie('accessToken', cookieOptions)
-        .cookie('refreshToken', cookieOptions)
+        .cookie('accessToken', accessToken, cookieOptions)
+        .cookie('refreshToken', refreshToken, cookieOptions)
         .json(
             new ApiResponse(
                 200,
@@ -145,6 +153,7 @@ const logoutUser = asyncHandler(async (req, res, next) => {
             new: true  // * this flag gave new value as result
         }
     );
+    console.log('hello');
     const cookieOptions = {
         httpOnly: true,
         secure: true
@@ -159,8 +168,48 @@ const logoutUser = asyncHandler(async (req, res, next) => {
         );
 });
 
+
+const refreshAccessToken = asyncHandler(async (req, res, next) => {
+    const incomingRefreshToken = req.cookies.refreshAccessToken || req.headers.authorization;
+    if (!incomingRefreshToken) {
+        throw new ApiError(401, "Invalid refresh Token");
+    }
+    const decodedToken = jwt.verify(refreshAccessToken, vars.REFRESH_TOKEN_SECRET);
+
+    const user = await User.findByIdAndUpdate(decodedToken?.userId);
+
+    if (!user) {
+        throw new ApiError(401, "Invalid refresh token");
+
+    }
+    if (incomingRefreshToken !== user?.refreshToken) {
+        throw new ApiError(401, "Unauthorized user");
+    }
+
+    const { accessToken, refreshToken: newRefreshToken } = await generateAccessAndRefreshToken(user._id);
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+
+    res
+        .status(200)
+        .cookie('accessToken', accessToken, options)
+        .cookie('refreshToken', newRefreshToken, options)
+        .res(
+            new ApiResponse(
+                200,
+                { accessToken, refreshToken: newRefreshToken },
+                'Access token refreshed successfully!'
+            )
+        )
+
+
+});
+
 export {
     registerUser,
     loginUser,
-    logoutUser
+    logoutUser,
+    refreshAccessToken
 }

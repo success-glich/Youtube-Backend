@@ -51,28 +51,45 @@ const userSchema = new Schema(
     timestamps: true,
 });
 
-function hashText(text) {
-    bcrypt.genSalt(10, function (err, salt) {
-        bcrypt.hash(text, salt, function (err, hash) {
-            if (!err)
-                return hash;
-        })
+async function hashText(text) {
+    // bcrypt.genSalt(10, function (err, salt) {
+    //     bcrypt.hash(text, salt, function (err, hash) {
+    //         if (!err)
+    //             return hash;
+    //     })
+    // });
+    const salt = await bcrypt.genSalt(10);
+    const hash = await bcrypt.hash(text, salt);
+    return hash;
+
+}
+function compareHash(text, hash) {
+    bcrypt.compare(text, hash).then(res => {
+        return res;
     });
 }
 
 userSchema.pre("save", async function (next) {
     if (!this.isModified("password")) return next();
-    // Hash the password
-    this.password = hashText(this.password);
+
+    this.password = await hashText(this.password);
     next();
 });
 
-userSchema.methods.isPasswordCorrect = function (password) {
+userSchema.methods.isPasswordCorrect = async function (password) {
 
-    bcrypt.compare(password, this.password).then((err, res) => {
-        if (!err)
-            return res;
-    });
+    if (!this.password) {
+        console.log('this.password ', this.password);
+        return false;
+    }
+    try {
+        const isMatch = await bcrypt.compare(password, this.password);
+        return isMatch
+
+    } catch (err) {
+        console.log(err);
+        return false;
+    }
 }
 
 userSchema.methods.generateAccessToken = function () {
