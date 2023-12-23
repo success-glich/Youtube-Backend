@@ -33,6 +33,23 @@ const uploadOnCloudinary = async (localFilePath) => {
     }
 }
 
+const removeOnCloudinary = async (publicId) => {
+    try {
+        if (!publicId) {
+            return null
+        }
+
+        const result = await cloudinary.uploader.destroy(publicId);
+        console.log("file is uploaded on cloudinary", response);
+
+        return result;
+    } catch (error) {
+        console.log('Error while destroying in cloudinary', error)
+        return null;
+    }
+
+}
+
 export {
 
     uploadOnCloudinary
