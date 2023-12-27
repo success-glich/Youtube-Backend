@@ -52,7 +52,8 @@ const removeOnCloudinary = async (publicId) => {
 
 export {
 
-    uploadOnCloudinary
+    uploadOnCloudinary,
+    removeOnCloudinary
 }
 
 
