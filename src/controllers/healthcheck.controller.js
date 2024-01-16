@@ -1,15 +1,10 @@
-import { ApiResponse } from "../utils/ApiResponse";
-import { asyncHandler } from "../utils/asyncHandler";
+import { ApiResponse } from "../utils/ApiResponse.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 
-const healthCheck = asyncHandler(async (req,res)=>{
-
-    
-    return res
+const healthCheck = asyncHandler(async (_, res) => {
+  return res
     .status(200)
-    .json(new ApiResponse(200,"OK","Server working perfectly"))
-
+    .json(new ApiResponse(200, "OK", "Server working perfectly"));
 });
 
-export default {
-    healthCheck
-}
+export { healthCheck };
